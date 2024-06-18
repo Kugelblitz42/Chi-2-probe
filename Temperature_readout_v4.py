@@ -27,7 +27,7 @@ class FileHandler(FileSystemEventHandler):
                 data_lines = lines[data_start_idx + 1:]
                 
                 # Create a DataFrame from the data lines
-                data = [line.strip().split(',') for line in data_lines]
+                data = [line.strip().split(',') for line in data_lines if len(line.strip().split(',')) == len(headers)]
                 df = pd.DataFrame(data, columns=headers)
                 
                 # Extracting Time and Temperature (K) columns
