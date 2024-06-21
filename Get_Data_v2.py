@@ -19,7 +19,7 @@ def wait_for_file_update(file_path, last_mod_time):
         mod_time = os.path.getmtime(file_path)
         if mod_time != last_mod_time:
             return mod_time
-        time.sleep(0.1)  # Reduced sleep interval for quicker updates
+        time.sleep(0.1) 
 
 # Create the data_log csv file
 def create_log_file():
