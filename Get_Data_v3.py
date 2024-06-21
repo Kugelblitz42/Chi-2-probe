@@ -19,7 +19,7 @@ def wait_for_file_update(file_path, last_mod_time):
         mod_time = os.path.getmtime(file_path)
         if mod_time != last_mod_time:
             return mod_time
-        time.sleep(1)
+        time.sleep(0.1)
 
 # Create the data_log csv file
 def create_log_file():
@@ -92,14 +92,17 @@ def live_readout():
     x2_vals = []
     y2_vals = []
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     fig.suptitle('Live Data Readout')
-    line1, = ax1.plot([], [], 'b')
+    line1, = ax1.plot([], [], 'r')
     line2, = ax2.plot([], [], 'g')
+    line3, = ax3.plot([], [], 'b')
     ax1.set_xlabel('Time (s)')
     ax1.set_ylabel('Temperature (K)')
     ax2.set_xlabel('Time (s)')
-    ax2.set_ylabel('Second Harmonic Magnitude (V)')
+    ax2.set_ylabel('Second Harmonic In-phase (V)')
+    ax2.set_xlabel('Time (s)')
+    ax2.set_ylabel('Second Harmonic Out-of-phase (V)')
     fig.show()
 
     last_mod_time = os.path.getmtime(input_file)
@@ -122,7 +125,9 @@ def live_readout():
 
             # Update plot data
             line1.set_data(time_elapsed, temperatures)
-            line2.set_data(time_elapsed, magnitude(x2_vals, y2_vals))
+            line2.set_data(time_elapsed, x2_vals)
+            line3.set_data(time_elapsed, y2_vals)
+           
 
             # Adjust plot limits
             ax1.set_xlim(0, max(time_elapsed) + 1)
@@ -130,7 +135,10 @@ def live_readout():
             ax1.set_title(f'Current Temperature: {latest_temperature:.2f} K')
 
             ax2.set_xlim(0, max(time_elapsed) + 1)
-            ax2.set_ylim(0, max(magnitude(x2_vals, y2_vals)) + 1)
+            ax2.set_ylim(0, max(x2_vals) + 1)
+
+            ax3.set_xlim(0, max(time_elapsed) + 1)
+            ax3.set_ylim(0, max(y2_vals) + 1)
 
             fig.canvas.draw()
             fig.canvas.flush_events()
