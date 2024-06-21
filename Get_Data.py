@@ -20,7 +20,7 @@ def wait_for_file_update(file_path, last_mod_time):
         mod_time = os.path.getmtime(file_path)
         if mod_time != last_mod_time:
             return mod_time
-        time.sleep(0.2)
+        time.sleep(1)
 
 # Create the data_log csv file
 def create_log_file():
@@ -92,11 +92,12 @@ def read_lockin_data(address):
 
 #Returns magnitude of voltage reading
 def magnitude(x, y):
-    vals=[]
-    for i in x:
-        vals[i]=math.sqrt(x[i]**2+y[i]**2)
+    vals = []
+    for i in range(len(x)):
+        vals.append(math.sqrt(x[i]**2 + y[i]**2))
     return vals
 
+#Records live data to file and plots newly added data
 def live_readout():
     timestamps = []
     temperatures = []
@@ -106,9 +107,8 @@ def live_readout():
     #Plot begins
     plt.ion()
     fig, axs=plt.subplots(1, 2)
-    line1, = axs[0, 0].plot([], [], 'r', label='Temperature (K)', marker='o')
-    line2, = axs[0, 1].plot([], [], 'g', label='Second Harmonic (V)', marker='o')
-    #axs[0,0].title('Current Temperature:')
+    line1, = axs[0].plot([], [], 'r', label='Temperature (K)', marker='o')
+    line2, = axs[1].plot([], [], 'g', label='Second Harmonic (V)', marker='o')
     plt.legend()
     
     while True:
@@ -129,13 +129,14 @@ def live_readout():
             line2.set_xdata(np.subtract(timestamps,timestamps[0]))
             line2.set_ydata(magnitude(x2_vals, y2_vals))
 
-            axs.relim()
-            axs.autoscale_view()
-            line1.title('Current Temperature: '+ str(latest_temperature)+' K')
+            axs[0].relim()
+            axs[0].autoscale_view()
+            axs[1].relim()
+            axs[1].autoscale_view()
+            axs[0].set_title('Current Temperature: '+ str(latest_temperature)+ ' K')
             plt.draw()
             plt.pause(0.1)
 
-        time.sleep(0.3)
         wait_for_file_update(input_file, os.path.getmtime(input_file))
 
 if __name__ == "__main__":
