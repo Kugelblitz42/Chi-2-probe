@@ -21,9 +21,8 @@ def get_latest_temperature(file_path):
             pass
         last_line = row
 
-    parts = last_line.strip().split(',')
-    timestamp = int(parts[0])
-    temperature = float(parts[1])
+    timestamp = int(float(last_line[0]))
+    temperature = float(last_line[1])
     latest_timestamp = datetime.fromtimestamp(timestamp)
     latest_temperature = temperature    
 
@@ -75,17 +74,15 @@ def live_readout():
     x2_vals = []
     y2_vals = []
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
     fig.suptitle('Live Data Readout')
     line1, = ax1.plot([], [], 'r')
     line2, = ax2.plot([], [], 'g')
     line3, = ax3.plot([], [], 'b')
-    ax1.set_xlabel('Time (s)')
     ax1.set_ylabel('Temperature (K)')
-    ax2.set_xlabel('Time (s)')
     ax2.set_ylabel('Second Harmonic In-phase (V)')
-    ax2.set_xlabel('Time (s)')
-    ax2.set_ylabel('Second Harmonic Out-of-phase (V)')
+    ax3.set_xlabel('Time (s)')
+    ax3.set_ylabel('Second Harmonic Out-of-phase (V)')
     fig.show()
 
     while True:
@@ -112,17 +109,21 @@ def live_readout():
             ax1.set_xlim(0, max(time_elapsed) + 1)
             ax1.set_ylim(min(temperatures) - 1, max(temperatures) + 1)
             ax1.set_title(f'Current Temperature: {latest_temperature:.2f} K')
+            ax1.set_xticks([])
 
             ax2.set_xlim(0, max(time_elapsed) + 1)
-            ax2.set_ylim(0, max(x2_vals) + 1)
+            ax2.set_ylim(min(x2_vals), max(x2_vals))
+            ax2.set_title(f'Current Reading: {v_readings[0]:.2f} V')
+            ax2.set_xticks([])
 
             ax3.set_xlim(0, max(time_elapsed) + 1)
-            ax3.set_ylim(0, max(y2_vals) + 1)
+            ax3.set_ylim(min(y2_vals), max(y2_vals))
+            ax3.set_title(f'Current Reading: {v_readings[1]:.2f} V')
 
             fig.canvas.draw()
             fig.canvas.flush_events()
         time.sleep(1)        
-        
+
 if __name__ == "__main__":
     # Create log file
     create_log_file()
