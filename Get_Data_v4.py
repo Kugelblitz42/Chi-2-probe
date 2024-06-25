@@ -13,19 +13,10 @@ output_file = r'C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Full_Data.csv'
 # GPIB address of the lock-in amplifier
 lock_in_address = 'GPIB0::13::INSTR'
 
-# Function to monitor changes in the temperature log file
-def wait_for_file_update(file_path, last_mod_time):
-    while True:
-        mod_time = os.path.getmtime(file_path)
-        if mod_time != last_mod_time:
-            return mod_time
-        time.sleep(0.4)
-
 # Create the data_log csv file
 def create_log_file():
     with open(output_file, 'w', newline='') as file:
         writer = csv.writer(file)
-
         # Header
         current_time = datetime.now().strftime("%B %d %Y %I:%M%p")
         writer.writerow(["-----------------------------------------------------------"])
@@ -47,7 +38,7 @@ def get_new_temperature_lines(file_path, last_position):
         parts = line.strip().split(',')
         if len(parts) > 1:
             try:
-                timestamp = int(float(parts[0]))
+                timestamp = float(parts[0])
                 temperature = float(parts[1])
                 latest_timestamp = datetime.fromtimestamp(timestamp)
                 data.append((latest_timestamp, temperature))
@@ -77,16 +68,13 @@ def read_lockin_data(address):
     finally:
         lockin.close()
 
-# Returns magnitude of voltage reading
-def magnitude(x, y):
-    return [math.sqrt(x[i]**2 + y[i]**2) for i in range(len(x))]
-
 # Records live data to file and plots newly added data
 def live_readout():
     timestamps = []
     temperatures = []
     x2_vals = []
     y2_vals = []
+    voltage_readings = []
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
     fig.suptitle('Live Data Readout')
@@ -99,27 +87,32 @@ def live_readout():
     ax3.set_ylabel('Second Harmonic Out-of-phase (V)')
     fig.show()
 
-    last_mod_time = os.path.getmtime(input_file)
     last_position = 0
     plot_counter = 0
 
+    def match_readings(temperature_data, voltage_readings):
+        for temp_time, temp in temperature_data:
+            closest_time = min(voltage_readings, key=lambda x: abs(x[0] - temp_time))
+            append_to_data_log(temp_time, temp, closest_time[1])
+            timestamps.append(temp_time)
+            temperatures.append(temp)
+            x2_vals.append(closest_time[1][0])
+            y2_vals.append(closest_time[1][1])
+
     while True:
+        # Collect lock-in data at regular intervals
+        voltage_reading = read_lockin_data(lock_in_address)
+        voltage_readings.append((datetime.now(), voltage_reading))
+
+        # Read new temperature data from the log file
         new_data, last_position = get_new_temperature_lines(input_file, last_position)
         if new_data:
-            for latest_timestamp, latest_temperature in new_data:
-                # Record data
-                v_readings = read_lockin_data(lock_in_address)
-                append_to_data_log(latest_timestamp, latest_temperature, v_readings)
-
-                timestamps.append(latest_timestamp)
-                temperatures.append(latest_temperature)
-                x2_vals.append(v_readings[0])
-                y2_vals.append(v_readings[1])
+            match_readings(new_data, voltage_readings)
 
             # Convert timestamps to elapsed seconds
             time_elapsed = [(t - timestamps[0]).total_seconds() for t in timestamps]
 
-            if plot_counter == 4:
+            if plot_counter == 2:
                 # Update plot data
                 line1.set_data(time_elapsed, temperatures)
                 line2.set_data(time_elapsed, x2_vals)
@@ -146,7 +139,8 @@ def live_readout():
             else:
                 plot_counter += 1
 
-        last_mod_time = wait_for_file_update(input_file, last_mod_time)
+        # Sleep for a second to maintain a 1-second interval for lock-in data collection
+        time.sleep(1)
 
 if __name__ == "__main__":
     # Create log file
