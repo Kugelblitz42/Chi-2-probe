@@ -13,20 +13,16 @@ output_file = r'C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Full_Data.csv'
 # GPIB address of the lock-in amplifier
 lock_in_address = 'GPIB0::13::INSTR'
 
-# Read the most recent temperature from the log.csv file
-def get_latest_temperature(file_path):
-    with open(file_path, mode='r', newline='') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            pass
-        last_line = row
-
-    timestamp = int(float(last_line[0]))
-    temperature = float(last_line[1])
-    latest_timestamp = datetime.fromtimestamp(timestamp)
-    latest_temperature = temperature    
-
-    return latest_timestamp, latest_temperature
+# Function to monitor changes in the temperature log file
+def wait_for_file_update(file_path, last_mod_time):
+    counter=0
+    while True:
+        mod_time = os.path.getmtime(file_path)
+        if mod_time != last_mod_time:
+            print('counter: '+str(counter))
+            return mod_time
+        counter+=1
+        time.sleep(0.4)
 
 # Create the data_log csv file
 def create_log_file():
@@ -41,6 +37,29 @@ def create_log_file():
         writer.writerow(["-----------------------------------------------------------"])
         #Begin Data
         writer.writerow(['Timestamp', 'Temperature (K)', 'Vx', 'Vy'])
+
+# Read the most recent temperature from the log.csv file
+def get_latest_temperature(file_path, last_position):
+    with open(file_path, 'r') as file:
+        file.seek(last_position)
+        lines = file.readlines()
+        last_position = file.tell()
+    
+    latest_temperature = None
+    latest_timestamp = None
+
+    for line in lines:
+        parts = line.strip().split(',')
+        if len(parts) > 1:
+            try:
+                timestamp = int(float(parts[0]))
+                temperature = float(parts[1])
+                latest_timestamp = datetime.fromtimestamp(timestamp)
+                latest_temperature = temperature
+            except ValueError:
+                continue
+    
+    return latest_timestamp, latest_temperature, last_position
 
 # Append new temperature and voltage data to the data_log csv file
 def append_to_data_log(timestamp, temperature, voltage_data):
@@ -85,8 +104,12 @@ def live_readout():
     ax3.set_ylabel('Second Harmonic Out-of-phase (V)')
     fig.show()
 
+    last_mod_time = os.path.getmtime(input_file)
+    last_position = 0
+    plot_counter = 0
+
     while True:
-        latest_timestamp, latest_temperature= get_latest_temperature(input_file)
+        latest_timestamp, latest_temperature, last_position = get_latest_temperature(input_file, last_position)
         if latest_timestamp and latest_temperature:
             # Record data
             v_readings = read_lockin_data(lock_in_address)
@@ -100,29 +123,34 @@ def live_readout():
             # Convert timestamps to elapsed seconds
             time_elapsed = [(t - timestamps[0]).total_seconds() for t in timestamps]
 
-            # Update plot data
-            line1.set_data(time_elapsed, temperatures)
-            line2.set_data(time_elapsed, x2_vals)
-            line3.set_data(time_elapsed, y2_vals)
-           
-            # Adjust plot limits
-            ax1.set_xlim(0, max(time_elapsed) + 1)
-            ax1.set_ylim(min(temperatures) - 1, max(temperatures) + 1)
-            ax1.set_title(f'Current Temperature: {latest_temperature:.2f} K')
-            ax1.set_xticks([])
+            if plot_counter==4:
+                # Update plot data
+                line1.set_data(time_elapsed, temperatures)
+                line2.set_data(time_elapsed, x2_vals)
+                line3.set_data(time_elapsed, y2_vals)
 
-            ax2.set_xlim(0, max(time_elapsed) + 1)
-            ax2.set_ylim(min(x2_vals), max(x2_vals))
-            ax2.set_title(f'Current Reading: {v_readings[0]:.2f} V')
-            ax2.set_xticks([])
+                # Adjust plot limits
+                ax1.set_xlim(0, max(time_elapsed) + 1)
+                ax1.set_ylim(min(temperatures) - 1, max(temperatures) + 1)
+                ax1.set_title(f'Current Temperature: {latest_temperature:.2f} K')
+                ax1.set_xticks([])
 
-            ax3.set_xlim(0, max(time_elapsed) + 1)
-            ax3.set_ylim(min(y2_vals), max(y2_vals))
-            ax3.set_title(f'Current Reading: {v_readings[1]:.2f} V')
+                ax2.set_xlim(0, max(time_elapsed) + 1)
+                ax2.set_ylim(min(x2_vals), max(x2_vals))
+                ax2.set_title(f'Current Reading: {v_readings[0]:.2f} V')
+                ax2.set_xticks([])
 
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-        time.sleep(1)        
+                ax3.set_xlim(0, max(time_elapsed) + 1)
+                ax3.set_ylim(min(y2_vals), max(y2_vals))
+                ax3.set_title(f'Current Reading: {v_readings[1]:.2f} V')
+
+                fig.canvas.draw()
+                fig.canvas.flush_events()
+                plot_counter=0
+            else:
+                plot_counter += 1
+
+        last_mod_time = wait_for_file_update(input_file, last_mod_time)
 
 if __name__ == "__main__":
     # Create log file
