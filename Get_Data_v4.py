@@ -15,13 +15,10 @@ lock_in_address = 'GPIB0::13::INSTR'
 
 # Function to monitor changes in the temperature log file
 def wait_for_file_update(file_path, last_mod_time):
-    counter=0
     while True:
         mod_time = os.path.getmtime(file_path)
         if mod_time != last_mod_time:
-            print('counter: '+str(counter))
             return mod_time
-        counter+=1
         time.sleep(0.4)
 
 # Create the data_log csv file
@@ -29,25 +26,23 @@ def create_log_file():
     with open(output_file, 'w', newline='') as file:
         writer = csv.writer(file)
 
-        #Header
+        # Header
         current_time = datetime.now().strftime("%B %d %Y %I:%M%p")
         writer.writerow(["-----------------------------------------------------------"])
         writer.writerow([current_time])
         writer.writerow(["Entire Data from session is collected in file. No distinction between runs is made."])
         writer.writerow(["-----------------------------------------------------------"])
-        #Begin Data
+        # Begin Data
         writer.writerow(['Timestamp', 'Temperature (K)', 'Vx', 'Vy'])
 
-# Read the most recent temperature from the log.csv file
-def get_latest_temperature(file_path, last_position):
+# Read new temperature lines from the log.csv file
+def get_new_temperature_lines(file_path, last_position):
     with open(file_path, 'r') as file:
         file.seek(last_position)
         lines = file.readlines()
         last_position = file.tell()
-    
-    latest_temperature = None
-    latest_timestamp = None
 
+    data = []
     for line in lines:
         parts = line.strip().split(',')
         if len(parts) > 1:
@@ -55,11 +50,11 @@ def get_latest_temperature(file_path, last_position):
                 timestamp = int(float(parts[0]))
                 temperature = float(parts[1])
                 latest_timestamp = datetime.fromtimestamp(timestamp)
-                latest_temperature = temperature
+                data.append((latest_timestamp, temperature))
             except ValueError:
                 continue
     
-    return latest_timestamp, latest_temperature, last_position
+    return data, last_position
 
 # Append new temperature and voltage data to the data_log csv file
 def append_to_data_log(timestamp, temperature, voltage_data):
@@ -109,21 +104,22 @@ def live_readout():
     plot_counter = 0
 
     while True:
-        latest_timestamp, latest_temperature, last_position = get_latest_temperature(input_file, last_position)
-        if latest_timestamp and latest_temperature:
-            # Record data
-            v_readings = read_lockin_data(lock_in_address)
-            append_to_data_log(latest_timestamp, latest_temperature, v_readings)
+        new_data, last_position = get_new_temperature_lines(input_file, last_position)
+        if new_data:
+            for latest_timestamp, latest_temperature in new_data:
+                # Record data
+                v_readings = read_lockin_data(lock_in_address)
+                append_to_data_log(latest_timestamp, latest_temperature, v_readings)
 
-            timestamps.append(latest_timestamp)
-            temperatures.append(latest_temperature)
-            x2_vals.append(v_readings[0])
-            y2_vals.append(v_readings[1])
+                timestamps.append(latest_timestamp)
+                temperatures.append(latest_temperature)
+                x2_vals.append(v_readings[0])
+                y2_vals.append(v_readings[1])
 
             # Convert timestamps to elapsed seconds
             time_elapsed = [(t - timestamps[0]).total_seconds() for t in timestamps]
 
-            if plot_counter==4:
+            if plot_counter == 4:
                 # Update plot data
                 line1.set_data(time_elapsed, temperatures)
                 line2.set_data(time_elapsed, x2_vals)
@@ -132,21 +128,21 @@ def live_readout():
                 # Adjust plot limits
                 ax1.set_xlim(0, max(time_elapsed) + 1)
                 ax1.set_ylim(min(temperatures) - 1, max(temperatures) + 1)
-                ax1.set_title(f'Current Temperature: {latest_temperature:.2f} K')
+                ax1.set_title(f'Current Temperature: {temperatures[-1]:.2f} K')
                 ax1.set_xticks([])
 
                 ax2.set_xlim(0, max(time_elapsed) + 1)
                 ax2.set_ylim(min(x2_vals), max(x2_vals))
-                ax2.set_title(f'Current Reading: {v_readings[0]:.2f} V')
+                ax2.set_title(f'Current Reading: {x2_vals[-1]:.2f} V')
                 ax2.set_xticks([])
 
                 ax3.set_xlim(0, max(time_elapsed) + 1)
                 ax3.set_ylim(min(y2_vals), max(y2_vals))
-                ax3.set_title(f'Current Reading: {v_readings[1]:.2f} V')
+                ax3.set_title(f'Current Reading: {y2_vals[-1]:.2f} V')
 
                 fig.canvas.draw()
                 fig.canvas.flush_events()
-                plot_counter=0
+                plot_counter = 0
             else:
                 plot_counter += 1
 
