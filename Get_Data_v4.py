@@ -5,20 +5,22 @@ import time
 import math
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # File paths
 input_file = r'C:\Users\bpkro\OneDrive\Escritorio\Chi-2\log.csv'
 output_file = r'C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Full_Data.csv'
 # GPIB address of the lock-in amplifier
 lock_in_address = 'GPIB0::13::INSTR'
+start_time = datetime.now()  # Record the start time of the script
 
 # Create the data_log csv file
 def create_log_file():
     with open(output_file, 'w', newline='') as file:
         writer = csv.writer(file)
+
         # Header
-        current_time = datetime.now().strftime("%B %d %Y %I:%M%p")
+        current_time = start_time.strftime("%B %d %Y %I:%M%p")
         writer.writerow(["-----------------------------------------------------------"])
         writer.writerow([current_time])
         writer.writerow(["Entire Data from session is collected in file. No distinction between runs is made."])
@@ -27,7 +29,7 @@ def create_log_file():
         writer.writerow(['Timestamp', 'Temperature (K)', 'Vx', 'Vy'])
 
 # Read new temperature lines from the log.csv file
-def get_new_temperature_lines(file_path, last_position):
+def get_new_temperature_lines(file_path, last_position, start_time):
     with open(file_path, 'r') as file:
         file.seek(last_position)
         lines = file.readlines()
@@ -38,10 +40,11 @@ def get_new_temperature_lines(file_path, last_position):
         parts = line.strip().split(',')
         if len(parts) > 1:
             try:
-                timestamp = float(parts[0])
+                timestamp = int(float(parts[0]))
                 temperature = float(parts[1])
                 latest_timestamp = datetime.fromtimestamp(timestamp)
-                data.append((latest_timestamp, temperature))
+                if latest_timestamp >= start_time:
+                    data.append((latest_timestamp, temperature))
             except ValueError:
                 continue
     
@@ -99,13 +102,20 @@ def live_readout():
             x2_vals.append(closest_time[1][0])
             y2_vals.append(closest_time[1][1])
 
+            # Keep only the last 2000 data points for plotting
+            if len(timestamps) > 2000:
+                timestamps.pop(0)
+                temperatures.pop(0)
+                x2_vals.pop(0)
+                y2_vals.pop(0)
+
     while True:
         # Collect lock-in data at regular intervals
         voltage_reading = read_lockin_data(lock_in_address)
         voltage_readings.append((datetime.now(), voltage_reading))
 
         # Read new temperature data from the log file
-        new_data, last_position = get_new_temperature_lines(input_file, last_position)
+        new_data, last_position = get_new_temperature_lines(input_file, last_position, start_time)
         if new_data:
             match_readings(new_data, voltage_readings)
 
