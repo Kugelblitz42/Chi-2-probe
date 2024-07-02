@@ -4,7 +4,7 @@
 #output folder will contain the data collected during the warming periods
 #All file paths must be written as raw strings in order for the code to import file names correctly
 
-#[file settings]
+[file settings]
 input_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\log.csv
 output_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Full_Data.csv
 output_folder=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Run Files\
