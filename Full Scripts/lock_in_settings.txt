@@ -1,0 +1,28 @@
+#Lock_in_settings
+#Frequency is given in Hertz
+#Give values with no spaces and if no change needed omit or comment out the setting
+
+
+address=GPIB0::13::INSTR
+dc_offset=0.5  # DC offset in Volts(V)
+ac_amplitude= 1  # AC amplitude in Volts(V)
+frequency= 808e3  # Lock-in signal and read frequency in Hertz(Hz)
+harmonic=2
+sensitivity=
+
+
+#Sensitivity settings
+#0 1 V [μA]     ||  14 20 μV [pA]
+#1 500 mV [nA]  ||  15 10 μV [pA]
+#2 200 mV [nA]  ||  16 5 μV [pA]
+#3 100 mV [nA]  ||  17 2 μV [pA]
+#4 50 mV [nA]   ||  18 1 μV [pA]
+#5 20 mV [nA]   ||  19 500 nV [fA]
+#6 10 mV [nA]   ||  20 200 nV [fA]
+#7 5 mV [nA]    ||  21 100 nV [fA]
+#8 2 mV [nA]    ||  22 50 nV [fA]
+#9 1 mV [nA]    ||  23 20 nV [fA]
+#10 500 μV [pA] ||  24 10 nV [fA]
+#11 200 μV [pA] ||  25 5 nV [fA]
+#12 100 μV [pA] ||  26 2 nV [fA]
+#13 50 μV [pA]  ||  27 1 nV [fA]
