@@ -6,19 +6,17 @@
 
 #[file settings]
 input_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\log.csv
-output_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Full_Data.csv
-output_folder=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Run_Files_2\
+output_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Test_1\Full_Data.csv
+output_folder=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Test_1
 
 #[Experiment settings]
-temp_min=3
-temp_max=6
+temp_min=2.7
+temp_max=3.4
 warming_ramp_rate=0.2
 
 #[Lock-in settings]
+lock_in_address=GPIB0::13::INSTR
 ac_voltage=0.5
 frequency=271.8e3
 dc_range_min=-400e-3
 dc_range_max=400e-3
-
-
-
