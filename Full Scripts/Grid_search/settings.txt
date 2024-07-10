@@ -2,7 +2,7 @@
 #input file should contain log information updated by MPMS
 #output file will collect data throughout the experiment
 #output folder will contain the data collected during the warming periods
-#All file paths must be written as raw strings in order for the code to import file names correctly
+#No additional characters needed for file strings. Do not add ' or ".
 
 #[file settings]
 input_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\log.csv
