@@ -169,9 +169,9 @@ def find_most_prominent_peak(file_path, temperature_range):
     return peak_prominence
 
 #Sets the dc_offset using previous peak prominence data
-def set_dc_offset(dc_range, setting):
+def set_dc_offset(dc_range, setting, current_dc_offset):
     if setting== '0': #Initialize settings
-        current_dc_offset = (dc_range[1] - dc_range[0])/2
+        current_dc_offset = dc_range[0]+(dc_range[1] - dc_range[0])/2
         setting = '+'
     elif setting == '+':
         current_dc_offset += (dc_range[1] - dc_range[0])/4
@@ -212,7 +212,7 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
     last_position = 0
     plot_counter = 0
     trend_counter = 0
-    current_dc_offset = dc_range[0]+(dc_range[1]-dc_range[0])/2
+    current_dc_offset = 0
     run_number = 1
     recording = False
     current_run_file = None
@@ -294,7 +294,7 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
                 if trend == "steady":
                     if not recording and abs(temperatures[-1]-temp_min)<=0.02:
                         #Set offset value
-                        current_dc_offset, grid_state =set_dc_offset(dc_range, grid_state)
+                        current_dc_offset, grid_state =set_dc_offset(dc_range, grid_state, current_dc_offset)
                         set_oscillator_parameters(lock_in_address, current_dc_offset, ac_voltage, frequency)
                         #Recording values and conditions
                         current_run_file = create_run_file(run_number, current_dc_offset, True, output_folder, output_file)
