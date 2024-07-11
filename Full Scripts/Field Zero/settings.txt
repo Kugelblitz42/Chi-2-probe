@@ -1,0 +1,24 @@
+#Every input should be written as a string, assumed units are Kelvin(K), Volts(V) and Hertz(Hz)
+#input file should contain log information updated by MPMS
+#output file will collect data throughout the experiment
+#output folder will contain the data collected during the warming periods
+#All file paths must be written as raw strings in order for the code to import file names correctly
+
+#[file settings]
+input_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Run Files\Output.csv
+output_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Test_1\Full_Data.csv
+output_folder=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Test_1
+
+#[Experiment settings]
+temp_min=3.5
+temp_max=8.5
+warming_ramp_rate=0.2
+
+#[Lock-in settings]
+lock_in_address=GPIB0::13::INSTR
+ac_voltage=0.5
+frequency=271.8e3
+dc_range_min=-400e-3
+dc_range_max=400e-3
+peak_min=6.5
+peak_max=7.5
