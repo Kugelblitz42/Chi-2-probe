@@ -1,0 +1,11 @@
+#Every input should be written as a string, assumed units are Kelvin(K), Volts(V) and Hertz(Hz)
+#input file should contain log information updated by MPMS
+#output file will collect data throughout the experiment
+#All file paths must be written as raw strings in order for the code to import file names correctly
+
+#[file settings]
+input_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Run Files\Output.csv
+output_file=C:\Users\bpkro\OneDrive\Escritorio\Chi-2\Test_1\Full_Data.csv
+
+#[Lock-in settings]
+lock_in_address=GPIB0::13::INSTR
