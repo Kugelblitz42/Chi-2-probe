@@ -49,7 +49,7 @@ def create_run_file(run_number, dc_offset, amplitude, frequency, run, output_fol
         writer = csv.writer(file)
         writer.writerow(["-----------------------------------------------------------"])
         writer.writerow([datetime.now().strftime("%B %d %Y %I:%M%p")])
-        writer.writerow(["AC amplitude: "+str(amplitude)]+" V. Frequency: "+str(frequency)+" Hz.")
+        writer.writerow(["AC amplitude: "+str(amplitude)+" V. Frequency: "+str(frequency)+" Hz."])
         writer.writerow(["Run: "+ str(run_number) +". DC offset: "+str(dc_offset)+ " V."])
         writer.writerow(['Peak detected @ '+' K with prominence '+' V'])
         writer.writerow(["-----------------------------------------------------------"])
@@ -78,8 +78,6 @@ def get_new_temperature_lines(file_path, last_position, start_time):
                 temperature = float(parts[1])
                 latest_timestamp = datetime.fromtimestamp(timestamp)
                 if latest_timestamp >= start_time:
-                    data.append((latest_timestamp, temperature))
-                else:
                     data.append((latest_timestamp, temperature))
             except ValueError:
                 continue
@@ -143,9 +141,9 @@ def detect_trend(temperatures, tolerance):
 def find_most_prominent_peak(file_path, temperature_range):
     # Read the data, skip the header and focus on range
     data = pd.read_csv(file_path, skiprows=4)
-    _,b=np.polyfit(data['Temperature (K)'], data['Vx'], 1)
+    b=np.polyfit(data['Temperature (K)'], data['Vx'], 0)
     data['Vx'] = data['Vx'] - b
-    _,b=np.polyfit(data['Temperature (K)'], data['Vy'], 1)
+    b=np.polyfit(data['Temperature (K)'], data['Vy'], 0)
     data['Vy'] = data['Vy'] - b
 
     #Record and append magnitudes to data frame
@@ -157,7 +155,7 @@ def find_most_prominent_peak(file_path, temperature_range):
     offset=np.polyfit(base['Temperature (K)'], base['Magnitude (V)'], 0)
 
     # Find peaks in the magnitudes data
-    peaks, _ = find_peaks(magnitudes, height=(offset+1.2*std_dev))  # 1.3 std deviations is roughly 90% of data 
+    peaks, _ = find_peaks(magnitudes, height=(offset+1.2*std_dev))  # 1.2 std deviations is roughly 90% of data 
     prominences = peak_prominences(magnitudes, peaks)[0]
 
     temperature = data['Temperature (K)'].values#numpy array
