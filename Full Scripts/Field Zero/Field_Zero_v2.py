@@ -205,7 +205,7 @@ def set_dc_offset(dc_range, setting, current_dc_offset):
         current_dc_offset = dc_range[0]+(dc_range[1] - dc_range[0])/2
         setting = '+'
     elif setting == '+':
-        current_dc_offset += 0.5*(dc_range[1] - dc_range[0])
+        current_dc_offset += (dc_range[1] - dc_range[0])/0.4
         setting = '-'
     elif setting=='-':
         current_dc_offset -= (dc_range[1] - dc_range[0])/2
@@ -288,17 +288,17 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
 
                 ax1.relim()
                 ax1.autoscale_view()
-                ax1.set_title(f'Current Temperature: {temperatures[-1]:.2f} K')
+                ax1.set_title(f'Current Temperature: {"{:.3e}".format(temperatures[-1])} K')
                 ax1.set_xticks([])
 
                 ax2.relim()
                 ax2.autoscale_view()
-                ax2.set_title(f'Current Reading: {x2_vals[-1]:.2f} V')
+                ax2.set_title(f'Current Reading: {"{:.3e}".format(x2_vals[-1])} V')
                 ax2.set_xticks([])
 
                 ax3.relim()
                 ax3.autoscale_view()
-                ax3.set_title(f'Current Reading: {y2_vals[-1]:.2f} V')
+                ax3.set_title(f'Current Reading: {"{:.3e}".format(x2_vals[-1])} V')
 
                 ax4.relim()
                 ax4.autoscale_view()
@@ -386,4 +386,4 @@ if __name__ == "__main__":
     #Create Full Data Log:
     create_run_file('--','--', ac_voltage, frequency, False, output_folder, output_file)
     #Data Logging and Plotting
-    live_readout(dc_range, lock_in_address, input_file, output_file, output_folder, temp_min, temp_max, ac_voltage, frequency, tolerance, peak_range, start_time, tolerance)
+    live_readout(dc_range, lock_in_address, input_file, output_file, output_folder, temp_min, temp_max, ac_voltage, frequency, tolerance, peak_range, start_time)
