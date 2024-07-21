@@ -139,8 +139,12 @@ def detect_trend(temperatures, tolerance):
  
 #Returns prominence of most prominent peak 
 def find_most_prominent_peak(file_path, temperature_range):
-    # Read the data, skip the header and focus on range
-    data = pd.read_csv(file_path, skiprows=4)
+    try:
+        data = pd.read_csv(file_path, skiprows=6)  # Skip the first 6 rows of the header
+    except pd.errors.ParserError as e:
+        print(f"Error reading CSV file: {e}")
+        return None, None
+    
     b=np.polyfit(data['Temperature (K)'], data['Vx'], 0)
     data['Vx'] = data['Vx'] - b
     b=np.polyfit(data['Temperature (K)'], data['Vy'], 0)
