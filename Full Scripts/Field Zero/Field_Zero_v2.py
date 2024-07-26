@@ -140,11 +140,10 @@ def detect_trend(temperatures, tolerance):
 #Returns prominence of most prominent peak 
 def find_most_prominent_peak(file_path, temperature_range):
     try:
-        data = pd.read_csv(file_path, skiprows=6)  # Skip the first 6 rows of the header
+        data = pd.read_csv(file_path, skiprows=5)  # Skip the first 6 rows of the header
     except pd.errors.ParserError as e:
         print(f"Error reading CSV file: {e}")
         return None, None
-    
     b=np.polyfit(data['Temperature (K)'], data['Vx'], 0)
     data['Vx'] = data['Vx'] - b
     b=np.polyfit(data['Temperature (K)'], data['Vy'], 0)
@@ -154,12 +153,13 @@ def find_most_prominent_peak(file_path, temperature_range):
     magnitudes = np.sqrt(data['Vx']**2 + data['Vy']**2)
     data['Magnitude (V)'] = magnitudes
     
-    base = data[(data['Temperature (K)'] >= 4.5) & (data['Temperature (K)'] <= 6)]
+    base = data[(data['Temperature (K)'] >= ) & (data['Temperature (K)'] <= 6)]
     std_dev = np.std(base['Magnitude (V)'])
-    offset=np.polyfit(base['Temperature (K)'], base['Magnitude (V)'], 0)
+    offset=np.polyfit(base['Temperature (K)'], base['Magnitude (V)'], 0)[0]
 
     # Find peaks in the magnitudes data
-    peaks, _ = find_peaks(magnitudes, height=(offset+1.2*std_dev))  # 1.2 std deviations is roughly 90% of data 
+    height_min=offset+1.2*std_dev # 1.2 std deviations is roughly 90% of data
+    peaks, _ = find_peaks(magnitudes, height=height_min) 
     prominences = peak_prominences(magnitudes, peaks)[0]
 
     temperature = data['Temperature (K)'].values#numpy array
@@ -189,14 +189,15 @@ def find_most_prominent_peak(file_path, temperature_range):
 
     # Extract peaks in the limited data
     peaks = np.where(data['Peak?'] == 1)[0]
-    if len(peaks) == 0:
-        print("No peaks found in range")
-        return None, None
 
     # Get the position and prominence of the most prominent peak
     most_prominent_peak_idx = np.argmax(prominences)
     peak_position = temperature[most_prominent_peak_idx]
     peak_prominence = prominences[most_prominent_peak_idx]
+
+    if len(peaks) == 0:
+        print("No peaks found in range")
+        return None, None
 
     print('----------------------------------------------')
     print('Peak detected @ '+ str("{:.3e}".format(peak_position))+' with prominence '+str("{:.3e}".format(peak_prominence))+' V')
@@ -209,10 +210,10 @@ def set_dc_offset(dc_range, setting, current_dc_offset):
         current_dc_offset = dc_range[0]+(dc_range[1] - dc_range[0])/2
         setting = '+'
     elif setting == '+':
-        current_dc_offset += (dc_range[1] - dc_range[0])/0.4
+        current_dc_offset += (dc_range[1] - dc_range[0])/2
         setting = '-'
     elif setting=='-':
-        current_dc_offset -= (dc_range[1] - dc_range[0])/2
+        current_dc_offset -= (dc_range[1] - dc_range[0])
         setting = 'Change_range'    
     return current_dc_offset, setting
 
@@ -237,10 +238,10 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
     ax2.set_ylabel('In-phase (V)')
     ax3.set_xlabel('Time (s)')
     ax3.set_ylabel('Out-of-phase (V)')
-    ax4.title.set_text('Magnitude (V)')
-    ax5.title.set_text('In-phase (V)')
+    #ax4.title.set_text('Magnitude (V)')
+    #ax5.title.set_text('In-phase (V)')
     ax6.set_xlabel('Temperature (K)')
-    ax6.title.set_text('Out-of-phase (V)')
+    #ax6.title.set_text('Out-of-phase (V)')
     fig.show()
 
     #local variables
@@ -286,35 +287,37 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
                 line1.set_data(time_elapsed, temperatures)#temperatures
                 line2.set_data(time_elapsed, x2_vals)#Chi-2 in phase vs time
                 line3.set_data(time_elapsed, y2_vals)#Chi-2 out of phase vs time
-                line4.set_data(temperatures, np.sqrt(np.array(x2_vals)**2 + np.array(y2_vals)**2))#R
+                R=np.sqrt(np.array(x2_vals)**2 + np.array(y2_vals)**2)
+                line4.set_data(temperatures, R)#R
                 line5.set_data(temperatures, x2_vals)#'' vs temperature
                 line6.set_data(temperatures, y2_vals)#'' vs temperature
 
                 ax1.relim()
                 ax1.autoscale_view()
-                ax1.set_title(f'Current Temperature: {"{:.3e}".format(temperatures[-1])} K')
-                ax1.set_xticks([])
+                ax1.set_title(f'Current Temperature: {"{:.2f}".format(temperatures[-1])} K')
+                #ax1.set_xticks([])
 
                 ax2.relim()
                 ax2.autoscale_view()
-                ax2.set_title(f'Current Reading: {"{:.3e}".format(x2_vals[-1])} V')
-                ax2.set_xticks([])
+                ax2.set_title(f'X: {"{:.3e}".format(x2_vals[-1])} V')
+                #ax2.set_xticks([])
 
                 ax3.relim()
                 ax3.autoscale_view()
-                ax3.set_title(f'Current Reading: {"{:.3e}".format(x2_vals[-1])} V')
+                ax3.set_title(f'Y: {"{:.3e}".format(x2_vals[-1])} V')
 
                 ax4.relim()
                 ax4.autoscale_view()
-                ax4.set_xticks([])
+                #ax4.set_xticks([])
+                ax4.set_title(f'R: {"{:.3e}".format(R[-1])} V')
 
                 ax5.relim()
                 ax5.autoscale_view()
-                ax5.set_xticks([])
+                #ax5.set_xticks([])
 
                 ax6.relim()
                 ax6.autoscale_view()
-
+                plt.tight_layout()
                 fig.canvas.draw()
                 fig.canvas.flush_events()
                 plot_counter = 0
@@ -342,7 +345,12 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
                         peak_position, peak_prominence =find_most_prominent_peak(current_run_file, peak_range)
                         with open(current_run_file, 'r') as file:
                             lines = file.readlines()
-                        lines[4] = 'Peak detected @ '+ str("{:.3e}".format(peak_position))+' K with prominence '+str("{:.3e}".format(peak_prominence))+' V'
+                        if peak_prominence ==None:
+                            peak_position = 'None'
+                            peak_prominence = 'None'
+                            lines[4] = 'Peak detected @ '+ str(peak_position)+' K with prominence '+str(peak_prominence)+' V'
+                        else:
+                            lines[4] = 'Peak detected @ '+ str("{:.3e}".format(peak_position))+' K with prominence '+str("{:.3e}".format(peak_prominence))+' V'
                         with open(current_run_file, 'w') as file:
                             file.writelines(lines)
         
@@ -354,8 +362,8 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
                         current_dc_offset = peak_data[-3:][min_peak_idx][0]
                         peak_data.append((current_dc_offset, peak_data[-3:][min_peak_idx][1]))
                         range= dc_range[1]-dc_range[0]
-                        dc_range[0] = current_dc_offset - (range/4)
-                        dc_range[1] = current_dc_offset + (range/4)
+                        dc_range[0] = current_dc_offset - 0.3*range
+                        dc_range[1] = current_dc_offset + 0.3*range
                         grid_state = '+'                 
                 trend_counter = 0
             else:
@@ -381,7 +389,7 @@ peak_range=[float(settings['peak_min']), float(settings['peak_max'])]
 # GPIB address of the lock-in amplifier
 lock_in_address = str(settings['lock_in_address'])
 start_time = datetime.now()  # Record the start time of the script
-tolerance = float(settings['warming_ramp_rate'])/60*0.3  #Tolerance for temperature change(20% of smallest expected slope)
+tolerance = float(settings['warming_ramp_rate'])/60*0.3  #Tolerance for temperature change(30% of smallest expected slope)
 
 if __name__ == "__main__":
     #Creat run log folder
