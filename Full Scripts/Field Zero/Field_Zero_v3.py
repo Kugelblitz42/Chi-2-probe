@@ -51,7 +51,7 @@ def create_run_file(run_number, dc_offset, amplitude, frequency, run, output_fol
         writer.writerow([datetime.now().strftime("%B %d %Y %I:%M%p")])
         writer.writerow(["AC amplitude: "+str(amplitude)+" V. Frequency: "+str(frequency)+" Hz."])
         writer.writerow(["Run: "+ str(run_number) +". DC offset: "+str(dc_offset)+ " V."])
-        writer.writerow(['Peak detected @ '+' K with prominence '+' V'])
+        writer.writerow(["Peak detected @ "+" K with prominence "+" V"])
         writer.writerow(["-----------------------------------------------------------"])
         writer.writerow(['Timestamp', 'Temperature (K)', 'Vx', 'Vy'])
     return filename
@@ -342,9 +342,7 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
                         with open(current_run_file, 'r') as file:
                             lines = file.readlines()
                         if peak_prominence ==None:
-                            peak_position = 'None'
-                            peak_prominence = 'None'
-                            lines[4] = 'Peak detected @ '+ str(peak_position)+' K with prominence '+str(peak_prominence)+' V'
+                            lines[4] = 'Peak detected @ '+ str('None')+' K with prominence '+str('None')+' V'
                         else:
                             lines[4] = 'Peak detected @ '+ str("{:.3e}".format(peak_position))+' K with prominence '+str("{:.3e}".format(peak_prominence))+' V'
                         with open(current_run_file, 'w') as file:
@@ -358,8 +356,8 @@ def live_readout(dc_range, lock_in_address, input_file, output_file, output_fold
                         current_dc_offset = peak_data[-3:][min_peak_idx][0]
                         peak_data.append((current_dc_offset, peak_data[-3:][min_peak_idx][1]))
                         range= dc_range[1]-dc_range[0]
-                        dc_range[0] = current_dc_offset - 0.3*range
-                        dc_range[1] = current_dc_offset + 0.3*range
+                        dc_range[0] = current_dc_offset - 0.27*range
+                        dc_range[1] = current_dc_offset + 0.27*range #~55% convergence of range
                         grid_state = '+'                 
                 trend_counter = 0
             else:
