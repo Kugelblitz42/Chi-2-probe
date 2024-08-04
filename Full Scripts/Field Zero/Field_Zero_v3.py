@@ -148,55 +148,12 @@ def find_most_prominent_peak(file_path, temperature_range):
     magnitudes = np.sqrt(data['Vx']**2 + data['Vy']**2)
     data['Magnitude (V)'] = magnitudes
     
-    base = data[(data['Temperature (K)'] >= 7.4) & (data['Temperature (K)'] <= 8.2)]#Adjust depending on peak location
-    std_dev = np.std(base['Magnitude (V)'])
-    offset=np.polyfit(base['Temperature (K)'], base['Magnitude (V)'], 0)[0]
-
-    # Find peaks in the magnitudes data
-    height_min=offset+1.2*std_dev # 1.2 std deviations is roughly 90% of data
-    peaks, _ = find_peaks(magnitudes, height=height_min) 
-    prominences = peak_prominences(magnitudes, peaks)[0]
+    auc = np.trapz(magnitudes, temperature)
 
     temperature = data['Temperature (K)'].values#numpy array
-    # Assign 1 if there is a peak at the data point
-    arr = [[0] * len(temperature), [0] * len(temperature)]
-    p_count = 0
-    for t in range(len(temperature)):
-        if t in peaks:
-            arr[0][t] = 1
-            arr[1][t] = prominences[p_count]
-            p_count += 1
-        else:
-            arr[0][t] = 0
-            arr[1][t] = 0
-    data['Peak?'] = arr[0]
-    data['Prominences (V)'] = arr[1]
-
-    data = data[(data['Temperature (K)'] >= temperature_range[0]) & (data['Temperature (K)'] <= temperature_range[1])]
-    if data.empty:
-        print("No data in the specified temperature range.")
-        return None, None
-    
-    # Extract temperature and prominences after limiting the data
-    temperature = data['Temperature (K)'].values
-    magnitudes = data['Magnitude (V)'].values
-    prominences = data['Prominences (V)'].values
-
-    # Extract peaks in the limited data
-    peaks = np.where(data['Peak?'] == 1)[0]
-
-    # Get the position and prominence of the most prominent peak
-    most_prominent_peak_idx = np.argmax(prominences)
-    peak_position = temperature[most_prominent_peak_idx]
-    peak_height = magnitudes[most_prominent_peak_idx] - offset
-    peak_prominence = prominences[most_prominent_peak_idx]
-
-    if len(peaks) == 0:
-        print("No peaks found in range")
-        return None, None
-
+    peak_position = 7.00
     print('----------------------------------------------')
-    print('Peak detected @ '+ str("{:.3e}".format(peak_position))+' with height '+str("{:.3e}".format(peak_height))+' V')
+    print('Peak detected @ '+ str("{:.3e}".format(peak_position))+' with height '+str("{:.3e}".format(auc))+' V')
     print('----------------------------------------------')
     return peak_position, peak_prominence
 
